@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">PersonalAgenda</string>
+    <string name="no_data_available">There is no data currently available.\n\nPlease make sure you have enabled\nthe Calendar Permissions and\nthere are events available in your Agenda…\n\n\n:)</string>
+    <string name="enable_permissions">"It is essential for this application to use the Calendar data.\nPlease enable the Calendar permission."</string>
+    <string name="allow">Allow</string>
+    <string name="cancel">Cancel</string>
 </resources>
