@@ -4,4 +4,10 @@
     <string name="enable_permissions">"It is essential for this application to use the Calendar data.\nPlease enable the Calendar permission."</string>
     <string name="allow">Allow</string>
     <string name="cancel">Cancel</string>
+    <string name="all_day">Duration: ALL DAY</string>
+    <string name="event_time">Duration: %1$s - %2$s</string>
+    <string name="event_location">Location: %1$s</string>
+    <string name="event_attendees">Attendees: %1$s</string>
+    <string name="event_notes">Notes: %1$s</string>
+    <string name="attendee_separator">;\u0020</string>
 </resources>

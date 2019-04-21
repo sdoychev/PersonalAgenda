@@ -1,4 +1,4 @@
-package com.smd.studio.personalagenda
+package com.smd.studio.personalagenda.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -11,13 +11,18 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
-import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.TextView
+import com.kodmap.library.kmrecyclerviewstickyheader.KmHeaderItemDecoration
+import com.smd.studio.personalagenda.R
+import com.smd.studio.personalagenda.adapter.EventItemType
+import com.smd.studio.personalagenda.adapter.EventsAdapter
 import com.smd.studio.personalagenda.model.Attendee
 import com.smd.studio.personalagenda.model.Event
+import com.smd.studio.personalagenda.ui.dialog.EventDialogFragment
+import com.smd.studio.personalagenda.util.Util
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
     private lateinit var eventsAdapter: EventsAdapter
     private lateinit var runnable: Runnable
+
+    private var stickyDay: String = ""
     private val eventsList = arrayListOf<Event>()
     private var calendarNames: HashMap<Int, String> = HashMap()
 
@@ -50,12 +57,17 @@ class MainActivity : AppCompatActivity() {
         })
         agendaList.layoutManager = LinearLayoutManager(applicationContext)
         agendaList.itemAnimator = DefaultItemAnimator()
-        agendaList.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
+        agendaList.addItemDecoration(KmHeaderItemDecoration(eventsAdapter))
         agendaList.adapter = eventsAdapter
     }
 
     private fun eventClickListener(eventPosition: Int) {
-        //TODO Open a DialogFragment showing some basic info like start/end time, meeting location, which calendar the event belongs to, a list of attendees for the meeting, and the contents of the notes field.
+        val fm = supportFragmentManager
+        val dialogFragment = EventDialogFragment()
+        val dialogArguments = Bundle()
+        dialogArguments.putSerializable(Util.EVENT_ARGUMENTS, eventsList[eventPosition])
+        dialogFragment.arguments = dialogArguments
+        dialogFragment.show(fm, "EventDialog")
     }
 
     private fun updateEmptyViewVisibility() {
@@ -135,6 +147,7 @@ class MainActivity : AppCompatActivity() {
                 eventCursor?.let {
                     eventCursor.moveToFirst()
                     do {
+                        attendeeList.clear()
                         // Attendee query
                         val attendeeCursor: Cursor? = contentResolver.query(CalendarContract.Attendees.CONTENT_URI, Util.ATTENDEE_PROJECTION, attendeeSelection,
                                 arrayOf(eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX).toString()), null)
@@ -150,6 +163,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         val event = Event(
                                 eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX),
+                                EventItemType.Event,
                                 eventCursor.getString(Util.PROJECTION_EVENT_TITLE_INDEX),
                                 eventCursor.getString(Util.PROJECTION_EVENT_DESCRIPTION_INDEX),
                                 eventCursor.getString(Util.PROJECTION_EVENT_DATE_START_INDEX),
@@ -158,8 +172,15 @@ class MainActivity : AppCompatActivity() {
                                 calendarNames[eventCursor.getInt(Util.PROJECTION_EVENT_CALENDAR_ID_INDEX)].toString(),
                                 eventCursor.getInt(Util.PROJECTION_EVENT_DISPLAY_COLOR_INDEX),
                                 eventCursor.getString(Util.PROJECTION_EVENT_AVAILABILITY_INDEX),
-                                attendeeList
+                                eventCursor.getInt(Util.PROJECTION_EVENT_ALL_DAY_INDEX),
+                                attendeeList.toList()
                         )
+                        val currentStickyDate = Util.getStickyDate(event.startTime)
+                        if (stickyDay == "" || stickyDay != currentStickyDate) {
+                            stickyDay = currentStickyDate
+                            eventsList.add(Event(Util.STICKY_HEADER_ID, EventItemType.Header, stickyDay, "",
+                                    "", "", "", "", 0, "", 0, emptyList()))
+                        }
                         eventsList.add(event)
                         eventsAdapter.notifyDataSetChanged()
                         updateEmptyViewVisibility()

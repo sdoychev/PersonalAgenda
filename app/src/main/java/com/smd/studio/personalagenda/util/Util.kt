@@ -1,9 +1,15 @@
-package com.smd.studio.personalagenda
+package com.smd.studio.personalagenda.util
 
 import android.provider.CalendarContract
+import java.text.SimpleDateFormat
+import java.util.*
 
 class Util {
     companion object {
+        //General constants
+        const val EVENT_ARGUMENTS: String = "EVENT_ARGUMENTS"
+        const val STICKY_HEADER_ID: Int = 10000
+
         // Permissions constants
         const val CALENDAR_PERMISSIONS: Int = 0
 
@@ -23,7 +29,8 @@ class Util {
                 CalendarContract.Events.DTSTART,                        // 5
                 CalendarContract.Events.DTEND,                          // 6
                 CalendarContract.Events.EVENT_LOCATION,                 // 7
-                CalendarContract.Events.AVAILABILITY                    // 8
+                CalendarContract.Events.AVAILABILITY,                   // 8
+                CalendarContract.Events.ALL_DAY                         // 9
         )
 
         // Event Projection Array
@@ -44,7 +51,20 @@ class Util {
         const val PROJECTION_EVENT_DATE_END_INDEX: Int = 6
         const val PROJECTION_EVENT_LOCATION_INDEX: Int = 7
         const val PROJECTION_EVENT_AVAILABILITY_INDEX: Int = 8
+        const val PROJECTION_EVENT_ALL_DAY_INDEX: Int = 9
         const val PROJECTION_ATTENDEE_NAME_INDEX: Int = 0
         const val PROJECTION_ATTENDEE_EMAIL_INDEX: Int = 1
+
+        // Get the time in human-readable format
+        fun getDate(milliSeconds: String): String {
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = milliSeconds.toLong()
+            return SimpleDateFormat("HH:mm", Locale.getDefault()).format(calendar.time)
+        }
+        fun getStickyDate(milliSeconds: String): String {
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = milliSeconds.toLong()
+            return SimpleDateFormat("EEEE, MM/dd/yyyy", Locale.getDefault()).format(calendar.time)
+        }
     }
 }
