@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/activity_horizontal_margin"
+    tools:context=".ui.MainActivity">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/settings_title"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/quickMeetingDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:text="@string/settings_meeting_duration"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title" />
+
+    <TextView
+        android:id="@+id/thirtyMin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_marginEnd="8dp"
+        android:text="@string/settings_meeting_30_min"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/quickMeetingSwitch"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/quickMeetingDuration" />
+
+    <TextView
+        android:id="@+id/sixtyMin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_marginEnd="8dp"
+        android:text="@string/settings_meeting_60_min"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/quickMeetingDuration"
+        app:layout_constraintStart_toEndOf="@+id/quickMeetingSwitch"
+        app:layout_constraintTop_toBottomOf="@+id/quickMeetingDuration" />
+
+    <Switch
+        android:id="@+id/quickMeetingSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        app:layout_constraintEnd_toEndOf="@+id/quickMeetingDuration"
+        app:layout_constraintStart_toStartOf="@+id/quickMeetingDuration"
+        app:layout_constraintTop_toBottomOf="@+id/quickMeetingDuration" />
+
+    <TextView
+        android:id="@+id/eventsTimespan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:text="@string/settings_events_timespan"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/quickMeetingSwitch" />
+
+    <EditText
+        android:id="@+id/eventsTimespanInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        app:layout_constraintEnd_toEndOf="@+id/eventsTimespan"
+        app:layout_constraintStart_toStartOf="@+id/eventsTimespan"
+        app:layout_constraintTop_toBottomOf="@+id/eventsTimespan"
+        tools:ignore="Autofill,LabelFor" />
+
+</android.support.constraint.ConstraintLayout>

@@ -7,8 +7,14 @@ import java.util.*
 class Util {
     companion object {
         //General constants
-        const val EVENT_ARGUMENTS: String = "EVENT_ARGUMENTS"
         const val STICKY_HEADER_ID: Int = 10000
+        const val EVENT_ARGUMENTS: String = "EVENT_ARGUMENTS"
+        const val QUICK_MEETING_ARGUMENTS: String = "QUICK_MEETING_ARGUMENTS"
+
+        // Shared Preferences
+        const val AGENDA_APP_SHARED_PREFS: String = "AGENDA_APP_SHARED_PREFS"
+        const val SHARED_PREFS_MEETING_DURATION_KEY: String = "SHARED_PREFS_MEETING_DURATION_KEY"
+        const val SHARED_PREFS_MEETING_DAYS_TIMESPAN_KEY: String = "SHARED_PREFS_MEETING_DAYS_TIMESPAN_KEY"
 
         // Permissions constants
         const val CALENDAR_PERMISSIONS: Int = 0
@@ -61,6 +67,7 @@ class Util {
             calendar.timeInMillis = milliSeconds.toLong()
             return SimpleDateFormat("HH:mm", Locale.getDefault()).format(calendar.time)
         }
+
         fun getStickyDate(milliSeconds: String): String {
             val calendar = Calendar.getInstance()
             calendar.timeInMillis = milliSeconds.toLong()

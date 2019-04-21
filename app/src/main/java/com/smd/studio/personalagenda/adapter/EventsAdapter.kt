@@ -46,7 +46,9 @@ class EventsAdapter(private val eventsList: List<Event>, val eventClickListener:
     }
 
     override fun isHeader(itemPosition: Int): Boolean {
-        return eventsList[itemPosition].type == EventItemType.Header
+        return if (eventsList.isNotEmpty()) {
+            eventsList[itemPosition].type == EventItemType.Header
+        } else true
     }
 
     override fun getHeaderLayout(headerPosition: Int?): Int {
@@ -65,8 +67,10 @@ class EventsAdapter(private val eventsList: List<Event>, val eventClickListener:
     }
 
     override fun bindHeaderData(header: View, headerPosition: Int) {
-        val tv: TextView = header.findViewById(R.id.headerTitle)
-        tv.text = eventsList[headerPosition].title
+        if (eventsList.isNotEmpty()) {
+            val headerTitle: TextView = header.findViewById(R.id.headerTitle)
+            headerTitle.text = eventsList[headerPosition].title
+        }
     }
 
     inner class EventViewHolder(view: View) : RecyclerView.ViewHolder(view) {

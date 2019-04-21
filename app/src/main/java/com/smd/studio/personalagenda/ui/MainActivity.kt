@@ -1,6 +1,7 @@
 package com.smd.studio.personalagenda.ui
 
 import android.Manifest
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.os.Bundle
@@ -13,6 +14,8 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import com.kodmap.library.kmrecyclerviewstickyheader.KmHeaderItemDecoration
@@ -22,6 +25,8 @@ import com.smd.studio.personalagenda.adapter.EventsAdapter
 import com.smd.studio.personalagenda.model.Attendee
 import com.smd.studio.personalagenda.model.Event
 import com.smd.studio.personalagenda.ui.dialog.EventDialogFragment
+import com.smd.studio.personalagenda.ui.dialog.QuickMeetingDialogFragment
+import com.smd.studio.personalagenda.ui.dialog.SettingsDialogFragment
 import com.smd.studio.personalagenda.util.Util
 import java.util.*
 
@@ -32,19 +37,55 @@ class MainActivity : AppCompatActivity() {
     private lateinit var eventsAdapter: EventsAdapter
     private lateinit var runnable: Runnable
 
-    private var stickyDay: String = ""
     private val eventsList = arrayListOf<Event>()
+    private var stickyDay: String = ""
     private var calendarNames: HashMap<Int, String> = HashMap()
+    private var prefs: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         agendaList = findViewById(R.id.agendaList)
         emptyView = findViewById(R.id.emptyView)
+        prefs = getSharedPreferences(Util.AGENDA_APP_SHARED_PREFS, 0)
 
         setupEventList()
         updateEmptyViewVisibility()
         requestCalendarPermissions()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.settings -> {
+                val dialogFragment = SettingsDialogFragment()
+                dialogFragment.show(supportFragmentManager, "SettingsDialog")
+                true
+            }
+            R.id.quickMeeting -> {
+                val dialogFragment = QuickMeetingDialogFragment()
+                val dialogArguments = Bundle()
+                dialogArguments.putSerializable(Util.QUICK_MEETING_ARGUMENTS, eventsList)
+                dialogFragment.arguments = dialogArguments
+                dialogFragment.show(supportFragmentManager, "QuickMeetingDialog")
+                true
+            }
+            R.id.refresh -> {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
+                    eventsList.clear()
+                    loadCalendarEvents()
+                } else {
+                    requestPermissions()
+                }
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun setupEventList() {
@@ -62,12 +103,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun eventClickListener(eventPosition: Int) {
-        val fm = supportFragmentManager
         val dialogFragment = EventDialogFragment()
         val dialogArguments = Bundle()
         dialogArguments.putSerializable(Util.EVENT_ARGUMENTS, eventsList[eventPosition])
         dialogFragment.arguments = dialogArguments
-        dialogFragment.show(fm, "EventDialog")
+        dialogFragment.show(supportFragmentManager, "EventDialog")
     }
 
     private fun updateEmptyViewVisibility() {
@@ -121,8 +161,8 @@ class MainActivity : AppCompatActivity() {
                 // Dates parameters
                 val calendar = Calendar.getInstance()
                 val startDay = calendar.timeInMillis
-                //TODO CUSTOMIZABLE PARAM
-                calendar.add(Calendar.DAY_OF_YEAR, 10)
+                val daysTimespan = if (prefs != null) prefs?.getInt(Util.SHARED_PREFS_MEETING_DAYS_TIMESPAN_KEY, 10) else 10
+                calendar.add(Calendar.DAY_OF_YEAR, daysTimespan!!)
                 val endDay = calendar.timeInMillis
                 val attendeeList = ArrayList<Attendee>()
 
@@ -134,61 +174,68 @@ class MainActivity : AppCompatActivity() {
                 val attendeeSelection = CalendarContract.Attendees.EVENT_ID + " = ?"
 
                 // Calendars query
-                val calendarCursor: Cursor? = contentResolver.query(CalendarContract.Calendars.CONTENT_URI, Util.CALENDAR_PROJECTION, null, null, calendarSortOrder)
+                val calendarCursor: Cursor? = contentResolver.query(CalendarContract.Calendars.CONTENT_URI,
+                        Util.CALENDAR_PROJECTION, null, null, calendarSortOrder)
                 calendarCursor?.let {
                     while (calendarCursor.moveToNext()) {
-                        calendarNames[calendarCursor.getInt(Util.PROJECTION_CALENDAR_ID_INDEX)] = calendarCursor.getString(Util.PROJECTION_CALENDAR_DISPLAY_NAME_INDEX)
+                        calendarNames[calendarCursor.getInt(Util.PROJECTION_CALENDAR_ID_INDEX)] =
+                                calendarCursor.getString(Util.PROJECTION_CALENDAR_DISPLAY_NAME_INDEX)
                     }
                     calendarCursor.close()
                 }
 
                 // Events query
-                val eventCursor: Cursor? = contentResolver.query(CalendarContract.Events.CONTENT_URI, Util.EVENT_PROJECTION, eventsSelection, eventsSelectionArgs, eventsSortOrder)
+                val eventCursor: Cursor? = contentResolver.query(CalendarContract.Events.CONTENT_URI,
+                        Util.EVENT_PROJECTION, eventsSelection, eventsSelectionArgs, eventsSortOrder)
                 eventCursor?.let {
                     eventCursor.moveToFirst()
-                    do {
-                        attendeeList.clear()
-                        // Attendee query
-                        val attendeeCursor: Cursor? = contentResolver.query(CalendarContract.Attendees.CONTENT_URI, Util.ATTENDEE_PROJECTION, attendeeSelection,
-                                arrayOf(eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX).toString()), null)
-                        attendeeCursor?.let {
-                            if (attendeeCursor.count > 0) {
-                                attendeeCursor.moveToFirst()
-                                do {
-                                    attendeeList.add(Attendee(attendeeCursor.getString(Util.PROJECTION_ATTENDEE_NAME_INDEX),
-                                            attendeeCursor.getString(Util.PROJECTION_ATTENDEE_EMAIL_INDEX)))
-                                } while (attendeeCursor.moveToNext())
-                                attendeeCursor.close()
+                    if (eventCursor.count > 0) {
+                        do {
+                            attendeeList.clear()
+                            // Attendee query
+                            val attendeeCursor: Cursor? = contentResolver.query(CalendarContract.Attendees.CONTENT_URI,
+                                    Util.ATTENDEE_PROJECTION, attendeeSelection,
+                                    arrayOf(eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX).toString()), null)
+                            attendeeCursor?.let {
+                                if (attendeeCursor.count > 0) {
+                                    attendeeCursor.moveToFirst()
+                                    do {
+                                        attendeeList.add(Attendee(attendeeCursor.getString(Util.PROJECTION_ATTENDEE_NAME_INDEX),
+                                                attendeeCursor.getString(Util.PROJECTION_ATTENDEE_EMAIL_INDEX)))
+                                    } while (attendeeCursor.moveToNext())
+                                    attendeeCursor.close()
+                                }
                             }
-                        }
-                        val event = Event(
-                                eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX),
-                                EventItemType.Event,
-                                eventCursor.getString(Util.PROJECTION_EVENT_TITLE_INDEX),
-                                eventCursor.getString(Util.PROJECTION_EVENT_DESCRIPTION_INDEX),
-                                eventCursor.getString(Util.PROJECTION_EVENT_DATE_START_INDEX),
-                                eventCursor.getString(Util.PROJECTION_EVENT_DATE_END_INDEX),
-                                eventCursor.getString(Util.PROJECTION_EVENT_LOCATION_INDEX),
-                                calendarNames[eventCursor.getInt(Util.PROJECTION_EVENT_CALENDAR_ID_INDEX)].toString(),
-                                eventCursor.getInt(Util.PROJECTION_EVENT_DISPLAY_COLOR_INDEX),
-                                eventCursor.getString(Util.PROJECTION_EVENT_AVAILABILITY_INDEX),
-                                eventCursor.getInt(Util.PROJECTION_EVENT_ALL_DAY_INDEX),
-                                attendeeList.toList()
-                        )
-                        val currentStickyDate = Util.getStickyDate(event.startTime)
-                        if (stickyDay == "" || stickyDay != currentStickyDate) {
-                            stickyDay = currentStickyDate
-                            eventsList.add(Event(Util.STICKY_HEADER_ID, EventItemType.Header, stickyDay, "",
-                                    "", "", "", "", 0, "", 0, emptyList()))
-                        }
-                        eventsList.add(event)
-                        eventsAdapter.notifyDataSetChanged()
-                        updateEmptyViewVisibility()
-                    } while (eventCursor.moveToNext())
+                            val event = Event(
+                                    eventCursor.getInt(Util.PROJECTION_EVENT_ID_INDEX),
+                                    EventItemType.Event,
+                                    eventCursor.getString(Util.PROJECTION_EVENT_TITLE_INDEX),
+                                    eventCursor.getString(Util.PROJECTION_EVENT_DESCRIPTION_INDEX),
+                                    eventCursor.getString(Util.PROJECTION_EVENT_DATE_START_INDEX),
+                                    eventCursor.getString(Util.PROJECTION_EVENT_DATE_END_INDEX),
+                                    eventCursor.getString(Util.PROJECTION_EVENT_LOCATION_INDEX),
+                                    calendarNames[eventCursor.getInt(Util.PROJECTION_EVENT_CALENDAR_ID_INDEX)].toString(),
+                                    eventCursor.getInt(Util.PROJECTION_EVENT_DISPLAY_COLOR_INDEX),
+                                    eventCursor.getString(Util.PROJECTION_EVENT_AVAILABILITY_INDEX),
+                                    eventCursor.getInt(Util.PROJECTION_EVENT_ALL_DAY_INDEX),
+                                    attendeeList.toList()
+                            )
+                            val currentStickyDate = Util.getStickyDate(event.startTime)
+                            if (stickyDay == "" || stickyDay != currentStickyDate) {
+                                stickyDay = currentStickyDate
+                                eventsList.add(Event(Util.STICKY_HEADER_ID, EventItemType.Header, stickyDay, "",
+                                        "", "", "", "", 0, "", 0, emptyList()))
+                            }
+                            eventsList.add(event)
+                            eventsAdapter.notifyDataSetChanged()
+                            updateEmptyViewVisibility()
+                        } while (eventCursor.moveToNext())
+                    }
                     eventCursor.close()
                 }
             }
         }
         handler.post(runnable)
+        updateEmptyViewVisibility()
     }
 }
