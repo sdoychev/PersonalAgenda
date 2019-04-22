@@ -3,7 +3,6 @@ package com.smd.studio.personalagenda.ui.dialog
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,7 +65,6 @@ class QuickMeetingDialogFragment : DialogFragment() {
     }
 
     private fun checkFreeTimeSlot(timeSlotStart: Long, timeSlotEnd: Long, quickMeetingField: TextView, events: ArrayList<Event>, eventIndex: Int) {
-        Log.d("QUICKMEETING", "Start at: $timeSlotStart ___ End at: $timeSlotEnd ___ Index: $eventIndex")
         val event: Event
         if (eventIndex >= events.size) {
             timeSlotFound(quickMeetingField, timeSlotStart)
@@ -75,21 +73,18 @@ class QuickMeetingDialogFragment : DialogFragment() {
             event = events[eventIndex]
         }
         if (event.type == EventItemType.Event) {
-            if (timeSlotEnd <= event.startTime.toLong()) {
-                Log.d("QUICKMEETING", "EVENT ${event.title} 111111")
-                timeSlotFound(quickMeetingField, timeSlotStart)
-                return
-            }
-        }
-        if (event.type == EventItemType.Event) {
-            if (event.endTime.toLong() <= timeSlotStart) {
-                Log.d("QUICKMEETING", "EVENT ${event.title} 222222")
+            if (event.availability != Util.EVENT_AVAILABILITY_BUSY) {
                 checkFreeTimeSlot(timeSlotStart, timeSlotEnd, quickMeetingField, events, eventIndex + 1)
                 return
             }
-        }
-        if (event.type == EventItemType.Event) {
-            Log.d("QUICKMEETING", "EVENT ${event.title} 333333")
+            if (timeSlotEnd <= event.startTime.toLong()) {
+                timeSlotFound(quickMeetingField, timeSlotStart)
+                return
+            }
+            if (event.endTime.toLong() <= timeSlotStart) {
+                checkFreeTimeSlot(timeSlotStart, timeSlotEnd, quickMeetingField, events, eventIndex + 1)
+                return
+            }
             val tempTimeSlotEnd = getPossibleEndHour(event.endTime.toLong(), savedMeetingDuration)
             checkFreeTimeSlot(event.endTime.toLong(), tempTimeSlotEnd, quickMeetingField, events, eventIndex + 1)
             return

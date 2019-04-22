@@ -10,6 +10,7 @@ class Util {
         const val STICKY_HEADER_ID: Int = 10000
         const val EVENT_ARGUMENTS: String = "EVENT_ARGUMENTS"
         const val QUICK_MEETING_ARGUMENTS: String = "QUICK_MEETING_ARGUMENTS"
+        const val EVENT_AVAILABILITY_BUSY: String = CalendarContract.Events.AVAILABILITY_BUSY.toString()
 
         // Shared Preferences
         const val AGENDA_APP_SHARED_PREFS: String = "AGENDA_APP_SHARED_PREFS"
