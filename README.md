@@ -1,5 +1,5 @@
-# PersonalAgenda
-An application that shows an Agenda view of all of the events in the native Android CalendarProvider
+# Personal Agenda
+An application that shows an Agenda view of all of the events in the native Android CalendarProvider.
 
 # Build (Apk file):
 [Personal Agenda.apk](https://github.com/sdoychev/PersonalAgenda/blob/master/Personal%20Agenda.apk?raw=true)
